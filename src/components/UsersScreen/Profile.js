@@ -1,0 +1,170 @@
+import React from 'react';
+import {createStackNavigator} from '@react-navigation/stack';
+import Colors from '../../res/Colors';
+import {launchImageLibrary} from 'react-native-image-picker'
+import {Text, StyleSheet, View, Image, TouchableOpacity} from 'react-native';
+import UserSession from '../../libs/sessions';
+
+const Icon = {
+  uri: `https://image.flaticon.com/icons/png/512/711/711191.png`,
+};
+
+
+class Profile extends React.Component {
+  state = {
+    user: {
+      profile:{},
+    },
+    token: '',
+    picture: {},
+  };
+  //gets user data
+  componentDidMount = () => {
+    this.getUserData();
+  };
+  //when the users logs in the data is retrieved from 2 functions
+  getUserData = async () => {
+    let user = await UserSession.instance.getUser();
+    let token = await UserSession.instance.getToken(user.username);
+    this.setState({user: user, token: token});
+  };
+  //This function opens up the device gallery to select a picture and stores it in a variable
+  handleChooseProfileImage = () => {
+      const options = {
+        includeBase64: false,
+        mediaType: 'photo',
+      };
+      //Here the gallery is opened
+      launchImageLibrary(options, response => {
+        if(!response.didCancel){
+            let photo = response.assets[0].uri;
+            this.setState({picture:photo});
+            this.editProfilePicture();
+          }  
+      });
+  };
+  //Here the photo stored earlier is recieved as a response and set on the profile screen 
+  editProfilePicture = async () => {
+      const {user, token, picture} = this.state;
+      let response = await UserSession.instance.editProfile(
+        user.id, 
+        token, 
+        picture
+      )
+      console.log(response)
+      this.setState({user: response})
+  };
+
+  render() {
+    const {user} = this.state;
+    return (
+      
+        <View style={styles.container}>
+            <View style={styles.badge}>
+              <Image
+                style={styles.header}
+                source={{uri: `${user.profile.header_img}`}}
+              />
+              
+              <Image
+                style={styles.profileImage}
+                source={{uri: `${user.profile.profile_picture}`}}
+              />
+
+              <TouchableOpacity style={styles.clickabeImage} onPress={this.handleChooseProfileImage}>
+                
+                <Image style={styles.icon} source={require('../../assets/picture.png')}/>
+              </TouchableOpacity>
+              
+              <View style={styles.userInfo}>
+                <Text style={styles.name}>{user.first_name}</Text>
+                <Text style={styles.lastname}>{user.last_name}</Text>
+                <Text style={styles.age}>{user.profile.age}</Text>
+              </View>
+              <Text style={styles.city}>{user.profile.city}</Text>
+              <Text style={styles.city}>{user.profile.country}</Text>
+            </View>
+        </View>
+    );
+  }
+}
+
+const styles = StyleSheet.create({
+  
+  container: {
+    backgroundColor: Colors.charade,
+    height: '100%',
+    width: '100%',
+  },
+  clickabeImage: {
+    width: 25,
+    height: 30,
+    position: 'absolute',
+    left: 225,
+    top: 325
+
+  },
+  
+  icon:{
+    width: 30,
+    height: 30,
+    
+  },
+
+  badge: {
+    flex: 1,
+    flexDirection: 'column',
+    margin: 20,
+    marginTop: 45,
+    backgroundColor: Colors.white,
+    borderRadius: 25,
+  },
+  header: {
+    width: '100%',
+    height: '40%',
+    borderTopLeftRadius: 25,
+    borderTopRightRadius: 25,
+  },
+  profileImage: {
+    width: 200,
+    height: 200,
+    resizeMode: 'cover',
+    borderRadius: 100,
+    borderWidth: 5,
+    borderColor: Colors.white,
+    position: 'absolute',
+    top: 170,
+    left: '22%',
+  },
+
+  userInfo: {
+    flexDirection: 'row',
+    marginTop: 140,
+    justifyContent: 'center',
+  },
+  name: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: Colors.blackPearl,
+  },
+  lastname:{
+    marginLeft:8,
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: Colors.blackPearl,
+  },
+  age: {
+    fontSize: 28,
+    marginLeft: 20,
+    color: Colors.zirccon,
+  },
+  city: {
+    marginTop: 10,
+    fontSize: 18,
+    textAlign: 'center',
+    color: Colors.zirccon,
+  },
+ 
+});
+
+export default Profile;
